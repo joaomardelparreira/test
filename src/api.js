@@ -24,7 +24,7 @@ const json = (data, status = 200) =>
 
 // Header text ("site") always comes from mixes.json in the repo, so you can edit it
 // on GitHub. The list of mixes lives in R2 once the admin page has saved it.
-async function loadDb(env, request) {
+export async function loadDb(env, request) {
   let fileDb = { site: {}, mixes: [] };
   const r = await env.ASSETS.fetch(new URL("/mixes.json", request.url));
   if (r.ok) fileDb = await r.json();

@@ -2,11 +2,21 @@
   const $ = (id) => document.getElementById(id);
   const audio = $("audio");
   const grid = $("grid");
+  const page = $("mix-page");
 
   let site = {};
   let mixes = [];          // all mixes, in grid order (newest first)
   let current = -1;        // index into mixes of the loaded mix
+  let view = "home";       // "home" or "mix"
+  let viewIndex = -1;      // which mix the mix page shows
 
+  // Each mix's address: /mix/mix-009
+  const mixPath = (m) => "/mix/" + encodeURIComponent(String(m.id).toLowerCase());
+  const mixUrl = (m) => location.origin + mixPath(m);
+  const fmtDate = (d) => {
+    const dt = new Date(d + "T12:00:00");
+    return isNaN(dt) ? d || "" : dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
 
   // ---------- helpers ----------
   const fmt = (s) => {
@@ -47,24 +57,27 @@
       p.append(`. ${site.since ? site.since + "-" : ""}${new Date().getFullYear()}.`);
       h.append(p);
     }
-    if (site.title) document.title = site.title;
   }
 
   // ---------- grid ----------
+  // The square cover with hover play button and live dot (used in the grid and on mix pages)
+  function coverButton(m, i, eager) {
+    const img = el("img", { class: "cover", alt: "", loading: eager ? "eager" : "lazy", src: m.cover });
+    img.addEventListener("load", () => img.classList.add("loaded"));
+    return el("button", { class: "cover-wrap", type: "button", "aria-label": `Play ${m.artist}`, onclick: () => playIndex(i) },
+      el("span", { class: "live-dot", "aria-hidden": "true" }),
+      el("span", { class: "overlay" }, el("span", { class: "play-btn" }, svg(PLAY_ICON), svg(PAUSE_ICON))),
+      img
+    );
+  }
+
   function renderGrid() {
     grid.innerHTML = "";
     mixes.forEach((m, i) => {
-      const img = el("img", { class: "cover", alt: "", loading: i < 8 ? "eager" : "lazy", src: m.cover });
-      img.addEventListener("load", () => img.classList.add("loaded"));
-
-      const card = el("article", { class: "card", style: `animation-delay:${350 + i * 50}ms` },
-        el("button", { class: "cover-wrap", type: "button", "aria-label": `Play ${m.artist}`, onclick: () => playIndex(i) },
-          el("span", { class: "live-dot", "aria-hidden": "true" }),
-          el("span", { class: "overlay" }, el("span", { class: "play-btn" }, svg(PLAY_ICON), svg(PAUSE_ICON))),
-          img
-        ),
+      const card = el("article", { class: "card", "data-i": i, style: `animation-delay:${350 + i * 50}ms` },
+        coverButton(m, i, i < 8),
         el("div", { class: "details" },
-          el("p", { class: "name" }, m.artist),
+          el("a", { class: "name", href: mixPath(m), "data-nav": "" }, m.artist),
           el("p", { class: "gray tabular" }, m.duration ? toHMS(m.duration) : "")
         )
       );
@@ -74,18 +87,24 @@
   }
 
   // ---------- playback ----------
-  function load(i) {
+  function load(i, autoplay = true) {
     if (!mixes.length) return;
     current = (i + mixes.length) % mixes.length;
     const m = mixes[current];
     audio.src = m.audio;
-    audio.play().catch(() => {});
+    if (autoplay) audio.play().catch(() => {});
+    $("share").hidden = false;
     $("now-title").textContent = m.artist;
     $("drawer-name").textContent = m.artist;
     $("drawer-desc").textContent = m.description || "";
     $("drawer-cover").src = m.cover;
     $("time-dur").textContent = m.duration ? toHMS(m.duration) : "0:00:00";
     updateMediaSession(m);
+    // On a mix page, follow along when the player moves to another mix
+    if (view === "mix" && viewIndex !== current) {
+      history.replaceState(null, "", mixPath(m));
+      renderMixPage(current);
+    }
     syncCards();
   }
 
@@ -106,11 +125,91 @@
 
   function syncCards() {
     const playing = !audio.paused;
-    grid.querySelectorAll(".card").forEach((c, i) => {
+    document.querySelectorAll(".card").forEach((c) => {
+      const i = Number(c.dataset.i);
       c.classList.toggle("current", i === current);
       c.classList.toggle("is-playing", i === current && playing);
     });
   }
+
+  // ---------- pages ----------
+  function renderMixPage(i) {
+    viewIndex = i;
+    page.innerHTML = "";
+    const m = mixes[i];
+    if (!m) {
+      document.title = `Mix not found — ${site.title || ""}`;
+      page.append(el("div", { class: "mix-text" },
+        el("h1", { class: "mix-title" }, "This mix doesn't exist."),
+        el("p", { class: "gray" }, "It may have been removed. ", el("a", { href: "/", "data-nav": "" }, "See all mixes"), ".")
+      ));
+      return;
+    }
+    document.title = `${m.artist} — ${site.title || ""}`;
+    const meta = [fmtDate(m.date), m.duration ? toHMS(m.duration) : ""].filter(Boolean).join("  ·  ");
+    page.append(
+      el("div", { class: "mix-text" },
+        el("h1", { class: "mix-title" }, m.artist),
+        el("p", { class: "gray tabular" }, meta),
+        m.description ? el("p", { class: "mix-desc" }, m.description) : null
+      ),
+      el("div", { class: "card mix-art", "data-i": i }, coverButton(m, i, true))
+    );
+    syncCards();
+  }
+
+  function route() {
+    const match = location.pathname.match(/^\/mix\/([^/]+)\/?$/);
+    view = match ? "mix" : "home";
+    grid.hidden = view !== "home";
+    page.hidden = view !== "mix";
+    $("home-link").hidden = view !== "mix";
+    if (view === "home") {
+      viewIndex = -1;
+      document.title = site.title || "Mixes";
+      return;
+    }
+    const id = decodeURIComponent(match[1]).toLowerCase();
+    const i = mixes.findIndex((m) => String(m.id).toLowerCase() === id);
+    renderMixPage(i);
+    // Opening a mix page with nothing loaded: get this mix ready in the player
+    if (i !== -1 && current === -1) load(i, false);
+    window.scrollTo(0, 0);
+  }
+
+  // In-site links change the page without reloading, so the music keeps playing.
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[data-nav]");
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    if (a.getAttribute("href") !== location.pathname) history.pushState(null, "", a.getAttribute("href"));
+    route();
+  });
+  window.addEventListener("popstate", route);
+
+  // ---------- share link ----------
+  let shareTimer;
+  function shareMsg(text) {
+    $("share-msg").textContent = text;
+    clearTimeout(shareTimer);
+    shareTimer = setTimeout(() => ($("share-msg").textContent = ""), 2500);
+  }
+  $("share").addEventListener("click", async () => {
+    const m = mixes[current];
+    if (!m) return;
+    const url = mixUrl(m);
+    // Phones: open the share sheet. Computers: copy to clipboard.
+    if (navigator.share && window.matchMedia("(hover: none)").matches) {
+      try { await navigator.share({ title: m.artist, url }); } catch {}
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      shareMsg("Link copied");
+    } catch {
+      shareMsg(url); // clipboard blocked: show the link so it can be copied by hand
+    }
+  });
 
   // ---------- progress ----------
   const seek = $("seek");
@@ -190,12 +289,17 @@
     return r.json();
   });
   getJson("/api/mixes")
-    .catch(() => getJson("mixes.json"))
+    .catch(() => getJson("/mixes.json"))
     .then((data) => {
       site = data.site || {};
-      mixes = (data.mixes || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+      // older entries store paths like "covers/x.webp": make them work from /mix/... too
+      const abs = (u) => (!u || /^(https?:)?\//.test(u) ? u : "/" + u);
+      mixes = (data.mixes || [])
+        .map((m) => ({ ...m, cover: abs(m.cover), audio: abs(m.audio) }))
+        .sort((a, b) => (a.date < b.date ? 1 : -1));
       renderHeader();
       renderGrid();
+      route();
     })
     .catch((err) => { grid.textContent = "Could not load mixes — " + err.message; });
 })();

@@ -13,6 +13,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 html, body { background: var(--bg); }
 body, button, a {
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
@@ -97,6 +98,28 @@ img { display: block; }
 .details { display: flex; justify-content: space-between; gap: 12px; }
 .details .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .details .tabular { flex: none; }
+.details a.name { color: var(--fg); }
+@media (hover: hover) { .details a.name:hover { color: var(--muted); } }
+
+/* Header link back to the grid (mix pages only) */
+.home-link { position: fixed; right: 24px; white-space: nowrap; }
+
+/* Mix page: text on the left, cover on the right */
+.mix-page {
+  margin-top: 96px; padding: 0 24px; display: grid; gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start;
+}
+.mix-text { display: flex; flex-direction: column; gap: 12px; min-width: 0; position: sticky; top: 24px; }
+.mix-title {
+  font: inherit; font-size: clamp(20px, 2.6vw, 32px); line-height: 1.1; letter-spacing: -0.015em;
+  text-wrap: balance; margin-bottom: 4px;
+}
+.mix-desc { max-width: 60ch; line-height: 1.6; white-space: pre-line; margin-top: 12px; }
+.mix-art { justify-self: end; width: 100%; max-width: min(100%, calc(100vh - 220px)); animation-delay: 150ms; }
+.mix-art .live-dot { top: 14px; left: 14px; width: 12px; height: 12px; }
+
+/* Share */
+.share-msg { color: var(--muted); max-width: 40vw; overflow: hidden; text-overflow: ellipsis; user-select: all; }
 
 /* Progress */
 .progress {
@@ -149,6 +172,12 @@ body.drawer-open .chevron { transform: rotate(180deg); }
   .player { padding: 0 15px; }
   .controls { gap: 16px; }
   .now-title { display: none; }
+  .home-link { right: 15px; }
+  .mix-page { margin-top: 48px; padding: 0 15px; grid-template-columns: 1fr; gap: 20px; }
+  .mix-art { order: -1; justify-self: stretch; max-width: none; }
+  .mix-text { position: static; }
+  .options { gap: 16px; }
+  .share-msg { display: none; }
   .drawer-info { width: auto; flex: 1; }
   .cover-col { width: auto; flex: none; }
   .cover-col img { height: 140px; }

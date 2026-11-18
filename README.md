@@ -27,6 +27,19 @@ Go to **`yoursite.com/admin`** and log in with your password. From there you can
 Mix numbers (`MIX-009`, …) are assigned automatically. The header text (`site`
 block in `mixes.json`) stays in the repo: edit it on GitHub.
 
+### Mix pages and share links
+
+Every mix has its own page at `/mix/<id>`, for example `yoursite.com/mix/mix-009`.
+It shows the title, date, length, description and cover, with the same player at
+the bottom.
+- The **link icon** in the player bar copies the playing mix's address. On phones
+  it opens the share sheet instead.
+- Clicking a mix's **name** under its cover opens its page. **← All mixes** goes
+  back to the grid.
+- Moving between pages doesn't stop the music.
+- Shared links show the mix's cover and title as a preview (WhatsApp, iMessage,
+  Slack and so on).
+
 ### How it works
 
 | Piece | Job |
@@ -34,6 +47,7 @@ block in `mixes.json`) stays in the repo: edit it on GitHub.
 | `src/worker.js` | Cloudflare Worker entry: sends `/api/*` and `/media/*` to the code below, everything else to `public/` |
 | `src/api.js` | serves the mix list, handles uploads/edits/deletes (password-protected) |
 | `src/media.js` | streams audio and covers from R2 (supports seeking) |
+| `src/mixpage.js` | serves `/mix/<id>` pages with link-preview tags |
 | R2 bucket `mixes` | stores the uploaded files and the mix list (`mixes.json`) |
 | `public/admin/` | the admin page |
 

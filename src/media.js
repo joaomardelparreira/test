@@ -1,9 +1,9 @@
 // Serves uploaded audio and covers from R2, with Range support so seeking works.
-export async function onRequest({ request, env, params }) {
+export async function handleMedia(request, env) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method not allowed", { status: 405 });
   }
-  const key = [].concat(params.path || []).join("/");
+  const key = decodeURIComponent(new URL(request.url).pathname.replace(/^\/media\//, ""));
   if (!/^(audio|covers)\//.test(key)) return new Response("Not found", { status: 404 });
 
   const hasRange = request.headers.has("range");

@@ -1,4 +1,4 @@
-// Cloudflare Pages Function: the site's small API.
+// The site's small API (called from src/worker.js).
 //
 //   GET    /api/mixes                     public: site settings + list of mixes
 //   GET    /api/admin/check               check the password
@@ -161,9 +161,9 @@ async function handleAdmin(sub, request, env, url) {
   throw new HttpError(404, "Not found");
 }
 
-export async function onRequest({ request, env, params }) {
-  const path = [].concat(params.path || []).join("/");
+export async function handleApi(request, env) {
   const url = new URL(request.url);
+  const path = url.pathname.replace(/^\/api\//, "");
   try {
     if (!env.BUCKET) throw new HttpError(500, "No R2 bucket bound as BUCKET (see README)");
     if (path === "mixes" && request.method === "GET") return json(await loadDb(env, request));

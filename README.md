@@ -6,11 +6,11 @@ There is no build step and no framework. The files are:
 
 | File | What it is |
 | --- | --- |
-| `index.html`, `styles.css`, `app.js` | the site |
-| `mixes.json` | header text, plus the starting list of mixes |
-| `covers/` | placeholder covers (uploads go to R2) |
-| `audio/` | placeholder audio (uploads go to R2) |
-| `admin/`, `functions/` | the admin page and its backend (see below) |
+| `public/index.html`, `styles.css`, `app.js` | the site |
+| `public/mixes.json` | header text, plus the starting list of mixes |
+| `public/covers/` | placeholder covers (uploads go to R2) |
+| `public/audio/` | placeholder audio (uploads go to R2) |
+| `src/`, `wrangler.toml` | the admin backend (see below) |
 | `scripts/add-mix.mjs` | command-line alternative to the admin page |
 
 ## Add, edit and delete mixes: the admin page
@@ -31,30 +31,35 @@ block in `mixes.json`) stays in the repo: edit it on GitHub.
 
 | Piece | Job |
 | --- | --- |
-| `functions/api/[[path]].js` | Cloudflare Pages Function: serves the mix list, handles uploads/edits/deletes (password-protected) |
-| `functions/media/[[path]].js` | streams audio and covers from R2 (supports seeking) |
+| `src/worker.js` | Cloudflare Worker entry: sends `/api/*` and `/media/*` to the code below, everything else to `public/` |
+| `src/api.js` | serves the mix list, handles uploads/edits/deletes (password-protected) |
+| `src/media.js` | streams audio and covers from R2 (supports seeking) |
 | R2 bucket `mixes` | stores the uploaded files and the mix list (`mixes.json`) |
-| `admin/` | the admin page |
+| `public/admin/` | the admin page |
 
 On the first save, the list of mixes in the repo's `mixes.json` is copied to R2.
 After that, R2 is the source of truth for mixes. If the API isn't there (for
-example a plain `python3 -m http.server`), the site falls back to the repo's
+example `python3 -m http.server` run inside `public/`), the site falls back to the repo's
 `mixes.json`.
 
-## Hosting setup (Cloudflare, free tier, about 10 minutes)
+## Hosting setup (Cloudflare Workers, free tier, about 10 minutes)
 
 1. Create a free account at cloudflare.com.
 2. **Create the bucket:** *R2 Object Storage → Create bucket*, named **`mixes`**.
    R2's free tier is 10 GB of storage with no charge for bandwidth. It asks for a
-   card to enable R2, but you won't be charged under 10 GB.
-3. **Create the site:** *Workers & Pages → Create → Pages → Connect to Git*, pick
-   this repo and branch. Framework preset: *None*. Leave the build command empty;
-   build output directory: `.`. Deploy.
-   `wrangler.toml` already binds the `mixes` bucket as `BUCKET`.
-4. **Set your password:** in the Pages project go to *Settings → Variables and
-   Secrets → Add*, choose type *Secret*, name `ADMIN_PASSWORD`, and enter a long
-   password. Then redeploy (*Deployments → ⋯ → Retry deployment*).
-5. Optional: *Custom domains → Set up a domain* to use your own domain.
+   payment method to enable R2, but you won't be charged under the free limits.
+3. **Create the Worker:** *Workers & Pages → Create → Import a repository*, pick
+   this repo, and name the Worker **`mixes`**. The name must match `name` in
+   `wrangler.toml`. Leave the build command empty and keep the deploy command
+   `npx wrangler deploy`. Under *Settings → Build*, set the branch to the one that
+   has this code.
+   `wrangler.toml` already sets up the site files (`public/`) and the bucket.
+4. **Set your password:** in the Worker go to *Settings → Variables and Secrets →
+   Add*, choose type *Secret*, name `ADMIN_PASSWORD`, and enter a long password.
+   Choose *Deploy* when asked.
+5. Your site is at `https://mixes.<your-account>.workers.dev`, shown at the top of
+   the Worker's page. Optional: *Settings → Domains & Routes → Add → Custom
+   domain* to use your own domain.
 
 Visit `/admin`, log in, delete the 8 placeholder mixes, and upload your own.
 
@@ -67,7 +72,7 @@ echo 'ADMIN_PASSWORD=test-password' > .dev.vars
 ```
 
 ```bash
-npx wrangler pages dev . --port 8788
+npx wrangler dev --port 8788
 ```
 
 Open http://localhost:8788 for the site and http://localhost:8788/admin for the
@@ -89,7 +94,7 @@ node scripts/add-mix.mjs --audio ~/mix.mp3 --cover ~/cover.jpg --artist "Name"
 
 - Delete the 8 placeholder mixes from `/admin`. You can also delete the `covers/` and
   `audio/` placeholder files from the repo.
-- Edit the `site` block, the `<title>` and `description` in `index.html`, and add
+- Edit the `site` block, the `<title>` and `description` in `public/index.html`, and add
   a favicon.
 - The typeface is Inter (free, from Google Fonts). To use another font, change
   the `font-family` near the top of `styles.css`.

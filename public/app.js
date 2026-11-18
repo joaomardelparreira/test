@@ -4,14 +4,12 @@
   const grid = $("grid");
 
   let site = {};
-  let mixes = [];          // all mixes, newest first
-  let queue = [];          // array of mix ids, in play order
-  let current = -1;        // index into queue
+  let mixes = [];          // all mixes, in grid order (newest first)
+  let current = -1;        // index into mixes of the loaded mix
   let cols = 4;
 
   const isMobile = () => window.matchMedia("(max-width: 599px)").matches;
   const colsKey = () => (isMobile() ? "cols-mobile" : "cols");
-  const byId = (id) => mixes.find((m) => m.id === id);
 
   // ---------- helpers ----------
   const fmt = (s) => {
@@ -20,10 +18,9 @@
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
     return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
-  const fmtDate = (d) => {
-    const dt = new Date(d + "T12:00:00");
-    return isNaN(dt) ? d : dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
+  // "01:24:00" or "49:13" -> "1:24:00"
+  const toHMS = (d) => fmt(String(d).split(":").map(Number).reduce((a, v) => a * 60 + v, 0));
+
   const el = (tag, attrs = {}, ...kids) => {
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) {
@@ -34,12 +31,13 @@
     for (const k of kids) if (k != null) n.append(k);
     return n;
   };
-  const arrow = () => {
-    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    s.setAttribute("width", "8"); s.setAttribute("height", "7"); s.setAttribute("viewBox", "0 0 8 7");
-    s.innerHTML = '<path d="M1 .6H7V6.6M1 6.6L7 .6" stroke="currentColor" stroke-width=".75" fill="none"/>';
-    return s;
+  const svg = (markup) => {
+    const t = document.createElement("template");
+    t.innerHTML = markup.trim();
+    return t.content.firstChild;
   };
+  const PLAY_ICON = '<svg class="icon-play" width="13" height="14" viewBox="0 0 13 14"><path d="M0 0L13 7L0 14Z"/></svg>';
+  const PAUSE_ICON = '<svg class="icon-pause" width="12" height="14" viewBox="0 0 12 14"><rect width="4" height="14"/><rect x="8" width="4" height="14"/></svg>';
 
   // ---------- header ----------
   function renderHeader() {
@@ -59,44 +57,18 @@
   function renderGrid() {
     grid.innerHTML = "";
     mixes.forEach((m, i) => {
-      const img = el("img", { class: "cover", alt: `${m.artist} cover art`, loading: i < 8 ? "eager" : "lazy", src: m.cover });
+      const img = el("img", { class: "cover", alt: "", loading: i < 8 ? "eager" : "lazy", src: m.cover });
       img.addEventListener("load", () => img.classList.add("loaded"));
 
-      const wrap = el("div", { class: "cover-wrap" },
-        el("p", { class: "tag tag-now" }, "Now Playing"),
-        el("p", { class: "tag tag-queue" }, "Next in Queue"),
-        el("button", { class: "close", type: "button", onclick: (e) => { e.stopPropagation(); card.classList.remove("show-info"); } }, "Close"),
-        el("div", { class: "info" },
-          el("p", {}, m.artist),
-          el("p", {}, fmtDate(m.date)),
-          m.description ? el("p", { class: "desc gray" }, m.description) : null,
-          m.link ? el("a", { href: m.link, target: "_blank", rel: "noopener" }, "Work", arrow()) : null
+      const card = el("article", { class: "card", style: `animation-delay:${350 + i * 50}ms` },
+        el("button", { class: "cover-wrap", type: "button", "aria-label": `Play ${m.artist}`, onclick: () => playIndex(i) },
+          el("span", { class: "tag" }, "Now Playing"),
+          el("span", { class: "overlay" }, el("span", { class: "play-btn" }, svg(PLAY_ICON), svg(PAUSE_ICON))),
+          img
         ),
-        el("div", { class: "overlay" },
-          el("button", { class: "btn", type: "button", "data-act": "play", onclick: (e) => { e.stopPropagation(); playNow(m.id); wrap.classList.remove("touched"); } }, "Play Now"),
-          el("button", { class: "btn", type: "button", "data-act": "queue", onclick: (e) => { e.stopPropagation(); addToQueue(m.id, e.currentTarget); } }, "Add to Queue"),
-          el("button", { class: "btn", type: "button", onclick: (e) => { e.stopPropagation(); card.classList.add("show-info"); wrap.classList.remove("touched"); } }, "Info")
-        ),
-        img
-      );
-      // touch devices: first tap reveals the buttons
-      wrap.addEventListener("click", () => {
-        if (window.matchMedia("(hover: none)").matches) {
-          document.querySelectorAll(".cover-wrap.touched").forEach((w) => w !== wrap && w.classList.remove("touched"));
-          wrap.classList.toggle("touched");
-        }
-      });
-
-      const dur = el("p", { class: "gray tabular" }, m.duration || "");
-      const card = el("article", { class: "card", "data-id": m.id, style: `animation-delay:${350 + i * 50}ms` },
-        wrap,
         el("div", { class: "details" },
-          el("div", {},
-            el("p", { class: "gray" }, m.id),
-            el("p", { class: "artist" }, m.artist),
-            el("p", { class: "gray tabular dur-mobile" }, m.duration || "")
-          ),
-          (dur.classList.add("dur-desktop"), dur)
+          el("p", { class: "name" }, m.artist),
+          el("p", { class: "gray tabular" }, m.duration ? toHMS(m.duration) : "")
         )
       );
       grid.append(card);
@@ -113,114 +85,42 @@
     try { localStorage.setItem(colsKey(), cols); } catch {}
   }
 
-  // ---------- queue / playback ----------
-  function currentMix() { return current >= 0 ? byId(queue[current]) : null; }
-
-  function load(index, autoplay = true) {
-    if (index < 0 || index >= queue.length) return;
-    current = index;
-    const m = currentMix();
+  // ---------- playback ----------
+  function load(i) {
+    if (!mixes.length) return;
+    current = (i + mixes.length) % mixes.length;
+    const m = mixes[current];
     audio.src = m.audio;
-    if (autoplay) audio.play().catch(() => {});
-    $("now-title").textContent = `${m.id}  ${m.artist}`;
+    audio.play().catch(() => {});
+    $("now-title").textContent = m.artist;
+    $("drawer-name").textContent = m.artist;
+    $("drawer-desc").textContent = m.description || "";
     $("drawer-cover").src = m.cover;
     $("time-dur").textContent = m.duration ? toHMS(m.duration) : "0:00:00";
     updateMediaSession(m);
-    renderQueue(); syncCards();
-  }
-  // "1:24:00" or "49:13" -> "1:24:00"
-  const toHMS = (d) => {
-    const p = d.split(":").map(Number);
-    const s = p.reduce((a, v) => a * 60 + v, 0);
-    return fmt(s);
-  };
-
-  function playNow(id) {
-    // put it right after the current item and jump to it
-    const existing = queue.indexOf(id);
-    if (existing !== -1 && existing === current) { audio.paused ? audio.play() : audio.currentTime = 0; return; }
-    if (existing !== -1) { queue.splice(existing, 1); if (existing < current) current--; }
-    queue.splice(current + 1, 0, id);
-    load(current + 1);
+    syncCards();
   }
 
-  function addToQueue(id, btn) {
-    if (queue.indexOf(id) !== -1 && queue.indexOf(id) > current) {
-      flash(btn, "Already Queued");
-      return;
-    }
-    queue.push(id);
-    if (current === -1) load(0, false);
-    renderQueue(); syncCards();
-    flash(btn, "Added ✓");
+  // Clicking a cover: play it, or pause/resume if it's the one already loaded.
+  function playIndex(i) {
+    if (i === current) return audio.paused ? audio.play() : audio.pause();
+    load(i);
   }
-  function flash(btn, text) {
-    const old = btn.textContent;
-    btn.textContent = text;
-    setTimeout(() => (btn.textContent = old), 1200);
-  }
-
-  function next() {
-    if (current + 1 < queue.length) return load(current + 1);
-    // end of queue: continue with the next-older mix in the grid, like a radio
-    const m = currentMix();
-    const i = m ? mixes.indexOf(m) : -1;
-    const nxt = mixes[(i + 1) % mixes.length];
-    if (nxt) { queue.push(nxt.id); load(queue.length - 1); }
-  }
+  const next = () => load(current + 1);
   function prev() {
-    if (audio.currentTime > 5 || current <= 0) { audio.currentTime = 0; return; }
+    if (current === -1 || audio.currentTime > 5) { audio.currentTime = 0; return; }
     load(current - 1);
   }
   function toggle() {
-    if (current === -1) {
-      if (!mixes.length) return;
-      queue.push(mixes[0].id);
-      return load(0);
-    }
+    if (current === -1) return load(0);
     audio.paused ? audio.play() : audio.pause();
   }
 
   function syncCards() {
-    const cur = currentMix();
-    const nextId = queue[current + 1];
-    document.querySelectorAll(".card").forEach((c) => {
-      c.classList.toggle("playing", !!cur && c.dataset.id === cur.id);
-      c.classList.toggle("queued", c.dataset.id === nextId);
-      const b = c.querySelector('[data-act="play"]');
-      if (b) b.textContent = cur && c.dataset.id === cur.id && !audio.paused ? "Playing" : "Play Now";
-    });
-  }
-
-  // ---------- queue drawer ----------
-  let dragFrom = null;
-  function renderQueue() {
-    const list = $("queue-items");
-    list.innerHTML = "";
-    const upcoming = queue.slice(current);
-    if (!upcoming.length) { list.append(el("li", { class: "queue-empty" }, "Nothing queued. Hover a mix and press Add to Queue.")); return; }
-    upcoming.forEach((id, k) => {
-      const qi = current + k;
-      const m = byId(id);
-      if (!m) return;
-      const li = el("li", { class: k === 0 ? "current" : "", draggable: k === 0 ? "false" : "true" },
-        el("span", { class: "num" }, m.id),
-        el("span", { class: "t", onclick: () => load(qi) }, m.artist),
-        k === 0 ? null : el("button", { class: "x", type: "button", "aria-label": "remove", onclick: () => { queue.splice(qi, 1); renderQueue(); syncCards(); } }, "✕")
-      );
-      if (k > 0) {
-        li.addEventListener("dragstart", () => { dragFrom = qi; li.classList.add("dragging"); });
-        li.addEventListener("dragend", () => li.classList.remove("dragging"));
-        li.addEventListener("dragover", (e) => e.preventDefault());
-        li.addEventListener("drop", (e) => {
-          e.preventDefault();
-          if (dragFrom == null || dragFrom === qi) return;
-          const [moved] = queue.splice(dragFrom, 1);
-          queue.splice(qi, 0, moved);
-          dragFrom = null; renderQueue(); syncCards();
-        });
-      }
-      list.append(li);
+    const playing = !audio.paused;
+    grid.querySelectorAll(".card").forEach((c, i) => {
+      c.classList.toggle("current", i === current);
+      c.classList.toggle("is-playing", i === current && playing);
     });
   }
 
@@ -241,9 +141,8 @@
   seek.addEventListener("input", () => {
     seeking = true;
     if (isFinite(audio.duration)) {
-      const t = (seek.value / 1000) * audio.duration;
       $("progress-fill").style.width = seek.value / 10 + "%";
-      $("time-cur").textContent = fmt(t);
+      $("time-cur").textContent = fmt((seek.value / 1000) * audio.duration);
     }
   });
   seek.addEventListener("change", () => {
@@ -255,8 +154,7 @@
   function updateMediaSession(m) {
     if (!("mediaSession" in navigator)) return;
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: `${m.id} ${m.artist}`,
-      artist: m.artist,
+      title: m.artist,
       album: site.title || "",
       artwork: [{ src: new URL(m.cover, location.href).href, sizes: "512x512" }],
     });
@@ -270,14 +168,13 @@
   }
 
   // ---------- wiring ----------
-  const setPlayIcon = () => {
-    $("icon-play").style.display = audio.paused ? "" : "none";
-    $("icon-pause").style.display = audio.paused ? "none" : "";
+  const onPlayState = () => {
+    document.body.classList.toggle("audio-playing", !audio.paused);
     $("play").setAttribute("aria-label", audio.paused ? "play" : "pause");
     syncCards();
   };
-  audio.addEventListener("play", setPlayIcon);
-  audio.addEventListener("pause", setPlayIcon);
+  audio.addEventListener("play", onPlayState);
+  audio.addEventListener("pause", onPlayState);
   audio.addEventListener("timeupdate", updateProgress);
   audio.addEventListener("progress", updateProgress);
   audio.addEventListener("loadedmetadata", updateProgress);
@@ -286,17 +183,18 @@
   $("play").addEventListener("click", toggle);
   $("next").addEventListener("click", next);
   $("prev").addEventListener("click", prev);
-  $("toggle-queue").addEventListener("click", () => document.body.classList.toggle("drawer-open"));
-  $("clear-queue").addEventListener("click", () => { queue = queue.slice(0, current + 1); renderQueue(); syncCards(); });
+  $("toggle-info").addEventListener("click", () => {
+    const open = document.body.classList.toggle("drawer-open");
+    $("toggle-info").setAttribute("aria-label", open ? "hide info" : "show info");
+  });
   $("zoom-in").addEventListener("click", () => setCols(cols + 1));
   $("zoom-out").addEventListener("click", () => setCols(cols - 1));
 
   document.addEventListener("keydown", (e) => {
-    if (e.target.matches("input, textarea")) return;
+    if (e.target.matches("input, textarea, button")) return;
     if (e.code === "Space") { e.preventDefault(); toggle(); }
     if (e.key === "ArrowRight" && e.shiftKey) next();
     if (e.key === "ArrowLeft" && e.shiftKey) prev();
-    if (e.key === "Escape") document.querySelectorAll(".card.show-info").forEach((c) => c.classList.remove("show-info"));
   });
 
   let wasMobile = isMobile();
@@ -309,7 +207,7 @@
   });
 
   // ---------- boot ----------
-  // Live list from the API (Cloudflare Pages), falling back to the static file.
+  // Live list from the API (Cloudflare), falling back to the static file.
   const getJson = (u) => fetch(u, { cache: "no-cache" }).then((r) => {
     if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) throw new Error(r.status);
     return r.json();
@@ -324,7 +222,6 @@
       try { saved = parseInt(localStorage.getItem(colsKey()), 10); } catch {}
       setCols(saved || (isMobile() ? 3 : 4));
       renderGrid();
-      renderQueue();
     })
-    .catch((err) => { grid.textContent = "Could not load mixes.json — " + err.message; });
+    .catch((err) => { grid.textContent = "Could not load mixes — " + err.message; });
 })();

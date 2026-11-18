@@ -20,7 +20,7 @@ Go to **`yoursite.com/admin`** and log in with your password. From there you can
   duration is filled in automatically. Press *Upload mix* and it's live straight
   away, with no git push and no redeploy. Large files (2-hour mixes too) upload in
   20 MB chunks with a progress bar. Covers are resized to 1200px; GIFs stay animated.
-- **Edit** a mix's artist, date, duration, link or description.
+- **Edit** a mix's name, date, length or description.
 - **Delete** a mix. Click Delete, then *Really delete?*. This also deletes its audio
   and cover files.
 

@@ -54,7 +54,7 @@
 
     .list { display: flex; flex-direction: column; }
     .row {
-      display: grid; grid-template-columns: 56px 64px 1fr 100px 80px auto; gap: 16px; align-items: center;
+      display: grid; grid-template-columns: 56px 1fr 100px 80px auto; gap: 16px; align-items: center;
       padding: 10px 0; border-top: 1px solid var(--light_gray);
     }
     .row img { width: 56px; height: 56px; object-fit: cover; background: var(--light_gray); }
@@ -71,7 +71,7 @@
       .fields, .edit { grid-template-columns: 1fr; }
       .row { grid-template-columns: 48px 1fr auto; }
       .row img { width: 48px; height: 48px; }
-      .row .id, .row .date, .row .dur { display: none; }
+      .row .date, .row .dur { display: none; }
     }
   </style>
 </head>
@@ -101,11 +101,10 @@
           <label class="full">Audio file (MP3 or M4A)
             <input id="audio" type="file" accept="audio/*,.mp3,.m4a" required />
           </label>
-          <label>Artist <input id="artist" type="text" required maxlength="200" /></label>
+          <label>Name <input id="artist" type="text" required maxlength="200" /></label>
           <label>Date <input id="date" type="date" required /></label>
-          <label>Duration <input id="duration" type="text" placeholder="filled in automatically" /></label>
-          <label>Link (shown as "Work") <input id="link" type="url" placeholder="https://" /></label>
-          <label class="full">Description (optional) <textarea id="description" maxlength="1000" rows="2"></textarea></label>
+          <label class="full">Length <input id="duration" type="text" placeholder="filled in automatically" /></label>
+          <label class="full">Description (shown when the player bar is expanded) <textarea id="description" maxlength="1000" rows="3"></textarea></label>
           <div class="full bar"><div id="progress"></div></div>
           <button class="btn-solid" type="submit" id="submit">Upload mix</button>
           <p class="msg full" id="add-msg"></p>

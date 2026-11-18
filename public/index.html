@@ -41,8 +41,8 @@
           <svg width="13" height="12" viewBox="0 0 13 12"><rect x="0" y="0" width="1.6" height="12" /><path d="M12 0V12L3 6Z" /></svg>
         </button>
         <button type="button" id="play" aria-label="play">
-          <svg id="icon-play" width="13" height="14" viewBox="0 0 13 14"><path d="M0 0L13 7L0 14Z" /></svg>
-          <svg id="icon-pause" width="12" height="14" viewBox="0 0 12 14" style="display:none"><rect width="4" height="14" /><rect x="8" width="4" height="14" /></svg>
+          <svg class="icon-play" width="13" height="14" viewBox="0 0 13 14"><path d="M0 0L13 7L0 14Z" /></svg>
+          <svg class="icon-pause" width="12" height="14" viewBox="0 0 12 14"><rect width="4" height="14" /><rect x="8" width="4" height="14" /></svg>
         </button>
         <button type="button" id="next" aria-label="next">
           <svg width="13" height="12" viewBox="0 0 13 12"><path d="M1 0V12L10 6Z" /><rect x="11.4" y="0" width="1.6" height="12" /></svg>
@@ -50,7 +50,7 @@
         <p class="now-title" id="now-title"></p>
       </div>
       <div class="options">
-        <button type="button" id="toggle-queue" aria-label="show queue">
+        <button type="button" id="toggle-info" aria-label="show info">
           <svg class="chevron" id="chevron" width="16" height="9" viewBox="0 0 16 9" fill="none"><path d="M1 8L8 1.5L15 8" stroke="currentColor" stroke-width="1.4" /></svg>
         </button>
         <p class="tabular time"><span id="time-cur">0:00:00</span> of <span id="time-dur">0:00:00</span></p>
@@ -58,9 +58,9 @@
     </div>
 
     <div class="drawer">
-      <div class="queue-col">
-        <div class="queue-header"><p>Queue</p><button type="button" id="clear-queue" class="gray">Clear</button></div>
-        <ol class="queue-items" id="queue-items"></ol>
+      <div class="drawer-info">
+        <p id="drawer-name">Nothing playing yet</p>
+        <p class="drawer-desc" id="drawer-desc">Press play on any mix.</p>
       </div>
       <div class="cover-col"><img id="drawer-cover" alt="" /></div>
     </div>

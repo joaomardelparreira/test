@@ -184,11 +184,11 @@
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
           artist: $("artist").value, date: $("date").value, duration: $("duration").value,
-          link: $("link").value, description: $("description").value,
+          description: $("description").value,
           cover: coverRes.url, audio: audioUrl,
         }),
       });
-      setMsg(msg, `Added ${entry.id} (${entry.artist}). It's live on the site now.`, "ok");
+      setMsg(msg, `Added "${entry.artist}". It's live on the site now.`, "ok");
       $("add-form").reset();
       $("date").value = new Date().toISOString().slice(0, 10);
       $("cover-preview").hidden = true;
@@ -231,7 +231,6 @@
     const wrap = el("div");
     const r = el("div", { class: "row" },
       el("img", { src: /^(https?:)?\//.test(m.cover) ? m.cover : "/" + m.cover, alt: "", loading: "lazy" }),
-      el("span", { class: "gray id" }, m.id),
       el("span", { class: "name" }, m.artist),
       el("span", { class: "gray date tabular" }, m.date || ""),
       el("span", { class: "gray dur tabular" }, m.duration || ""),
@@ -253,8 +252,8 @@
       };
       const status = el("span", { class: "msg" });
       editBox = el("div", { class: "edit" },
-        field("artist", "Artist"), field("date", "Date", "date"), field("duration", "Duration"),
-        field("link", "Link", "url", "full"), field("description", "Description", "text", "full"),
+        field("artist", "Name"), field("date", "Date", "date"), field("duration", "Length"),
+        field("description", "Description", "text", "full"),
         el("div", { class: "actions" },
           el("button", { class: "btn-solid", type: "button", onclick: async () => {
             try {

@@ -6,10 +6,7 @@
   let site = {};
   let mixes = [];          // all mixes, in grid order (newest first)
   let current = -1;        // index into mixes of the loaded mix
-  let cols = 4;
 
-  const isMobile = () => window.matchMedia("(max-width: 599px)").matches;
-  const colsKey = () => (isMobile() ? "cols-mobile" : "cols");
 
   // ---------- helpers ----------
   const fmt = (s) => {
@@ -62,7 +59,7 @@
 
       const card = el("article", { class: "card", style: `animation-delay:${350 + i * 50}ms` },
         el("button", { class: "cover-wrap", type: "button", "aria-label": `Play ${m.artist}`, onclick: () => playIndex(i) },
-          el("span", { class: "tag" }, "Now Playing"),
+          el("span", { class: "live-dot", "aria-hidden": "true" }),
           el("span", { class: "overlay" }, el("span", { class: "play-btn" }, svg(PLAY_ICON), svg(PAUSE_ICON))),
           img
         ),
@@ -74,15 +71,6 @@
       grid.append(card);
     });
     syncCards();
-  }
-
-  function setCols(n) {
-    const max = isMobile() ? 4 : 8;
-    cols = Math.max(1, Math.min(max, n));
-    grid.style.setProperty("--cols", cols);
-    $("zoom-out").disabled = cols === 1;
-    $("zoom-in").disabled = cols === max;
-    try { localStorage.setItem(colsKey(), cols); } catch {}
   }
 
   // ---------- playback ----------
@@ -187,23 +175,12 @@
     const open = document.body.classList.toggle("drawer-open");
     $("toggle-info").setAttribute("aria-label", open ? "hide info" : "show info");
   });
-  $("zoom-in").addEventListener("click", () => setCols(cols + 1));
-  $("zoom-out").addEventListener("click", () => setCols(cols - 1));
 
   document.addEventListener("keydown", (e) => {
     if (e.target.matches("input, textarea, button")) return;
     if (e.code === "Space") { e.preventDefault(); toggle(); }
     if (e.key === "ArrowRight" && e.shiftKey) next();
     if (e.key === "ArrowLeft" && e.shiftKey) prev();
-  });
-
-  let wasMobile = isMobile();
-  window.addEventListener("resize", () => {
-    if (isMobile() === wasMobile) return;
-    wasMobile = isMobile();
-    let saved = null;
-    try { saved = parseInt(localStorage.getItem(colsKey()), 10); } catch {}
-    setCols(saved || (wasMobile ? 3 : 4));
   });
 
   // ---------- boot ----------
@@ -218,9 +195,6 @@
       site = data.site || {};
       mixes = (data.mixes || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
       renderHeader();
-      let saved = null;
-      try { saved = parseInt(localStorage.getItem(colsKey()), 10); } catch {}
-      setCols(saved || (isMobile() ? 3 : 4));
       renderGrid();
     })
     .catch((err) => { grid.textContent = "Could not load mixes — " + err.message; });

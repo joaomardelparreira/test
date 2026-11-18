@@ -14,50 +14,50 @@
     body { padding: 24px; padding-bottom: 96px; }
     .wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
     .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-    h2 { font: inherit; color: var(--dark_gray); margin-bottom: 16px; }
-    label { display: flex; flex-direction: column; gap: 6px; color: var(--dark_gray); }
+    h2 { font: inherit; color: var(--muted); margin-bottom: 16px; }
+    label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); }
     input, textarea {
-      font: inherit; color: var(--black); background: transparent; border: 0;
-      border-bottom: 1px solid var(--light_gray); padding: 6px 0; outline: none; border-radius: 0;
+      font: inherit; color: var(--fg); background: transparent; border: 0;
+      border-bottom: 1px solid var(--surface); padding: 6px 0; outline: none; border-radius: 0;
       transition: border-color .3s var(--ease);
     }
-    input:focus, textarea:focus { border-color: var(--black); }
+    input:focus, textarea:focus { border-color: var(--fg); }
     textarea { resize: vertical; min-height: 40px; }
     input[type="file"] { border: 0; padding: 0; }
     .btn-solid {
-      background: var(--black); color: var(--white); padding: 8px 14px; align-self: flex-start; justify-self: start;
+      background: var(--fg); color: var(--bg); padding: 8px 14px; align-self: flex-start; justify-self: start;
       transition: background-color .35s var(--ease);
     }
-    .btn-solid:hover:not(:disabled) { background: #555; }
+    .btn-solid:hover:not(:disabled) { background: var(--muted); }
     .btn-solid:disabled { opacity: .4; cursor: default; }
-    .btn-line { padding: 4px 8px; background: var(--white); border: 1px solid var(--light_gray); }
-    .btn-line:hover { border-color: var(--black); }
-    .btn-danger { color: #b3261e; }
+    .btn-line { padding: 4px 8px; background: var(--bg); border: 1px solid var(--surface); }
+    .btn-line:hover { border-color: var(--fg); }
+    .btn-danger { color: #ff6b6b; }
     .msg { min-height: 1.2em; }
-    .msg.err { color: #b3261e; }
-    .msg.ok { color: #2e7d32; }
+    .msg.err { color: #ff6b6b; }
+    .msg.ok { color: #6fcf7a; }
 
     #login { max-width: 320px; margin: 20vh auto 0; display: flex; flex-direction: column; gap: 16px; }
 
     .add { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
     .drop {
-      aspect-ratio: 1 / 1; background: var(--light_gray); display: flex; align-items: center; justify-content: center;
-      text-align: center; color: var(--dark_gray); position: relative; cursor: pointer; overflow: hidden;
+      aspect-ratio: 1 / 1; background: var(--surface); display: flex; align-items: center; justify-content: center;
+      text-align: center; color: var(--muted); position: relative; cursor: pointer; overflow: hidden;
     }
     .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-    .drop.over { outline: 1px solid var(--black); }
+    .drop.over { outline: 1px solid var(--fg); }
     .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; align-content: start; }
     .fields .full { grid-column: 1 / -1; }
-    .bar { height: 5px; background: var(--light_gray); position: relative; }
-    .bar > div { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--black); transition: width .2s linear; }
+    .bar { height: 5px; background: var(--surface); position: relative; }
+    .bar > div { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--fg); transition: width .2s linear; }
 
     .list { display: flex; flex-direction: column; }
     .row {
       display: grid; grid-template-columns: 56px 1fr 100px 80px auto; gap: 16px; align-items: center;
-      padding: 10px 0; border-top: 1px solid var(--light_gray);
+      padding: 10px 0; border-top: 1px solid var(--surface);
     }
-    .row img { width: 56px; height: 56px; object-fit: cover; background: var(--light_gray); }
+    .row img { width: 56px; height: 56px; object-fit: cover; background: var(--surface); }
     .row .actions { display: flex; gap: 8px; justify-content: flex-end; }
     .row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .edit { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px 24px; padding: 8px 0 12px; }

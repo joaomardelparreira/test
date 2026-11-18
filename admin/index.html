@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Mix Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    [hidden] { display: none !important; }
+    body { padding: 24px; padding-bottom: 96px; }
+    .wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+    .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    h2 { font: inherit; color: var(--dark_gray); margin-bottom: 16px; }
+    label { display: flex; flex-direction: column; gap: 6px; color: var(--dark_gray); }
+    input, textarea {
+      font: inherit; color: var(--black); background: transparent; border: 0;
+      border-bottom: 1px solid var(--light_gray); padding: 6px 0; outline: none; border-radius: 0;
+      transition: border-color .3s var(--ease);
+    }
+    input:focus, textarea:focus { border-color: var(--black); }
+    textarea { resize: vertical; min-height: 40px; }
+    input[type="file"] { border: 0; padding: 0; }
+    .btn-solid {
+      background: var(--black); color: var(--white); padding: 8px 14px; align-self: flex-start; justify-self: start;
+      transition: background-color .35s var(--ease);
+    }
+    .btn-solid:hover:not(:disabled) { background: #555; }
+    .btn-solid:disabled { opacity: .4; cursor: default; }
+    .btn-line { padding: 4px 8px; background: var(--white); border: 1px solid var(--light_gray); }
+    .btn-line:hover { border-color: var(--black); }
+    .btn-danger { color: #b3261e; }
+    .msg { min-height: 1.2em; }
+    .msg.err { color: #b3261e; }
+    .msg.ok { color: #2e7d32; }
+
+    #login { max-width: 320px; margin: 20vh auto 0; display: flex; flex-direction: column; gap: 16px; }
+
+    .add { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
+    .drop {
+      aspect-ratio: 1 / 1; background: var(--light_gray); display: flex; align-items: center; justify-content: center;
+      text-align: center; color: var(--dark_gray); position: relative; cursor: pointer; overflow: hidden;
+    }
+    .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .drop.over { outline: 1px solid var(--black); }
+    .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; align-content: start; }
+    .fields .full { grid-column: 1 / -1; }
+    .bar { height: 5px; background: var(--light_gray); position: relative; }
+    .bar > div { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--black); transition: width .2s linear; }
+
+    .list { display: flex; flex-direction: column; }
+    .row {
+      display: grid; grid-template-columns: 56px 64px 1fr 100px 80px auto; gap: 16px; align-items: center;
+      padding: 10px 0; border-top: 1px solid var(--light_gray);
+    }
+    .row img { width: 56px; height: 56px; object-fit: cover; background: var(--light_gray); }
+    .row .actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .row .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .edit { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px 24px; padding: 8px 0 12px; }
+    .edit .full { grid-column: 1 / -1; }
+    .edit .actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+
+    @media (max-width: 700px) {
+      body { padding: 16px; }
+      .add { grid-template-columns: 1fr; }
+      .drop { max-width: 260px; }
+      .fields, .edit { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 48px 1fr auto; }
+      .row img { width: 48px; height: 48px; }
+      .row .id, .row .date, .row .dur { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <form id="login" hidden>
+    <p>Mix admin</p>
+    <label>Password <input id="pw" type="password" autocomplete="current-password" required /></label>
+    <button class="btn-solid" type="submit">Log in</button>
+    <p class="msg err" id="login-msg"></p>
+  </form>
+
+  <div class="wrap" id="app" hidden>
+    <div class="top">
+      <p>Mix admin</p>
+      <p><a href="/" target="_blank">View site ↗</a> &nbsp; <button type="button" class="gray" id="logout">Log out</button></p>
+    </div>
+
+    <section>
+      <h2>Add a mix</h2>
+      <form class="add" id="add-form">
+        <label class="drop" id="drop">
+          <span id="drop-text">Drop cover image here<br />or click to choose</span>
+          <img id="cover-preview" alt="" hidden />
+          <input id="cover" type="file" accept="image/*" required />
+        </label>
+        <div class="fields">
+          <label class="full">Audio file (MP3 or M4A)
+            <input id="audio" type="file" accept="audio/*,.mp3,.m4a" required />
+          </label>
+          <label>Artist <input id="artist" type="text" required maxlength="200" /></label>
+          <label>Date <input id="date" type="date" required /></label>
+          <label>Duration <input id="duration" type="text" placeholder="filled in automatically" /></label>
+          <label>Link (shown as "Work") <input id="link" type="url" placeholder="https://" /></label>
+          <label class="full">Description (optional) <textarea id="description" maxlength="1000" rows="2"></textarea></label>
+          <div class="full bar"><div id="progress"></div></div>
+          <button class="btn-solid" type="submit" id="submit">Upload mix</button>
+          <p class="msg full" id="add-msg"></p>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Mixes <span id="count"></span></h2>
+      <div class="list" id="list"></div>
+    </section>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

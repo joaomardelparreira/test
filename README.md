@@ -7,88 +7,88 @@ There is no build step and no framework. The files are:
 | File | What it is |
 | --- | --- |
 | `index.html`, `styles.css`, `app.js` | the site |
-| `mixes.json` | **your content**: site text plus one entry per mix |
-| `covers/` | cover images |
-| `audio/` | audio files, if you keep them in the repo (see "Where to put audio files") |
-| `scripts/add-mix.mjs` | adds a mix with one command |
+| `mixes.json` | header text, plus the starting list of mixes |
+| `covers/` | placeholder covers (uploads go to R2) |
+| `audio/` | placeholder audio (uploads go to R2) |
+| `admin/`, `functions/` | the admin page and its backend (see below) |
+| `scripts/add-mix.mjs` | command-line alternative to the admin page |
 
-## Run it locally
+## Add, edit and delete mixes: the admin page
+
+Go to **`yoursite.com/admin`** and log in with your password. From there you can:
+- **Add a mix:** drop in a cover image and an MP3/M4A, and type the artist. The
+  duration is filled in automatically. Press *Upload mix* and it's live straight
+  away, with no git push and no redeploy. Large files (2-hour mixes too) upload in
+  20 MB chunks with a progress bar. Covers are resized to 1200px; GIFs stay animated.
+- **Edit** a mix's artist, date, duration, link or description.
+- **Delete** a mix. Click Delete, then *Really delete?*. This also deletes its audio
+  and cover files.
+
+Mix numbers (`MIX-009`, …) are assigned automatically. The header text (`site`
+block in `mixes.json`) stays in the repo: edit it on GitHub.
+
+### How it works
+
+| Piece | Job |
+| --- | --- |
+| `functions/api/[[path]].js` | Cloudflare Pages Function: serves the mix list, handles uploads/edits/deletes (password-protected) |
+| `functions/media/[[path]].js` | streams audio and covers from R2 (supports seeking) |
+| R2 bucket `mixes` | stores the uploaded files and the mix list (`mixes.json`) |
+| `admin/` | the admin page |
+
+On the first save, the list of mixes in the repo's `mixes.json` is copied to R2.
+After that, R2 is the source of truth for mixes. If the API isn't there (for
+example a plain `python3 -m http.server`), the site falls back to the repo's
+`mixes.json`.
+
+## Hosting setup (Cloudflare, free tier, about 10 minutes)
+
+1. Create a free account at cloudflare.com.
+2. **Create the bucket:** *R2 Object Storage → Create bucket*, named **`mixes`**.
+   R2's free tier is 10 GB of storage with no charge for bandwidth. It asks for a
+   card to enable R2, but you won't be charged under 10 GB.
+3. **Create the site:** *Workers & Pages → Create → Pages → Connect to Git*, pick
+   this repo and branch. Framework preset: *None*. Leave the build command empty;
+   build output directory: `.`. Deploy.
+   `wrangler.toml` already binds the `mixes` bucket as `BUCKET`.
+4. **Set your password:** in the Pages project go to *Settings → Variables and
+   Secrets → Add*, choose type *Secret*, name `ADMIN_PASSWORD`, and enter a long
+   password. Then redeploy (*Deployments → ⋯ → Retry deployment*).
+5. Optional: *Custom domains → Set up a domain* to use your own domain.
+
+Visit `/admin`, log in, delete the 8 placeholder mixes, and upload your own.
+
+## Test everything on your computer first
+
+You need Node 18 or newer.
 
 ```bash
-python3 -m http.server 8000
+echo 'ADMIN_PASSWORD=test-password' > .dev.vars
 ```
-
-Then open http://localhost:8000.
-
-## Add a new mix
-
-You need Node 18 or newer. `ffmpeg` is optional: with it, the duration is read
-automatically and the cover is resized.
 
 ```bash
-node scripts/add-mix.mjs --audio ~/Desktop/mix.mp3 --cover ~/Desktop/cover.jpg --artist "Artist Name" --link "https://artist.site" --description "Recorded live in Lisbon"
+npx wrangler pages dev . --port 8788
 ```
 
-The script:
-- gives the mix the next number (`MIX-009`, `MIX-010`, …),
-- copies the cover into `covers/` (resized to 1200px webp; GIFs stay animated),
-- copies the audio into `audio/`, or uploads it to R2 when you pass `--r2 <bucket>`,
-- reads the duration and adds the entry to the top of `mixes.json`.
+Open http://localhost:8788 for the site and http://localhost:8788/admin for the
+admin (password `test-password`). Uploads are stored in a local, simulated R2
+under `.wrangler/`, so nothing touches your real account. `.dev.vars` and
+`.wrangler/` are git-ignored.
 
-Then publish it:
+### Command-line alternative (no backend)
+
+`scripts/add-mix.mjs` writes into the repo's `mixes.json` instead of R2. Use it
+only if you host the site as plain static files without the admin page; once the
+admin page has saved to R2, the repo's mix list is ignored.
 
 ```bash
-git add -A && git commit -m "Add new mix" && git push
+node scripts/add-mix.mjs --audio ~/mix.mp3 --cover ~/cover.jpg --artist "Name"
 ```
-
-The host redeploys on its own within about a minute.
-
-**From the browser, without the script:** on GitHub, open `covers/`, choose
-*Add file → Upload files*, and upload the image. Then edit `mixes.json` with the
-pencil icon and copy an existing entry. Commit, and the site updates.
-
-### Fields in `mixes.json`
-
-```json
-{
-  "id": "MIX-009",
-  "artist": "Artist Name",
-  "date": "2026-11-18",
-  "duration": "01:24:00",
-  "cover": "covers/mix-009-artist-name.webp",
-  "audio": "https://audio.yourdomain.com/mix-009-artist-name.mp3",
-  "link": "https://artist.site",
-  "description": "optional"
-}
-```
-
-The `site` block at the top holds the header text (`tagline`, `byline`,
-`bylineUrl`, `since`) and the number prefix (`prefix`, for example `MIX` or `NA`).
-
-## Hosting (recommended: Cloudflare, free)
-
-1. **The site: Cloudflare Pages.** In the Cloudflare dashboard, go to
-   *Workers & Pages → Create → Pages → Connect to Git*. Pick this repo, leave the
-   build command empty, and set the output directory to `/`. Every `git push`
-   then redeploys. Add your domain under *Custom domains*.
-2. **The audio: Cloudflare R2.** A one-hour MP3 is about 80–150 MB, so it doesn't
-   belong in git (GitHub refuses files over 100 MB). R2 gives 10 GB free and
-   charges nothing for bandwidth, which matters when people stream long mixes.
-   - Create a bucket, for example `mixes`, and turn on public access. The best
-     option is to connect a custom domain such as `audio.yourdomain.com`.
-   - Put that URL in `mixes.json` as `"audioBaseUrl"`.
-   - Run `npx wrangler login` once, then add mixes with
-     `--r2 mixes`. The script uploads the file and fills in the URL.
-
-Other hosts also work, because these are plain static files: Netlify, Vercel,
-GitHub Pages. For the audio, Backblaze B2 with Cloudflare in front, or Bunny CDN,
-are other cheap options. Avoid serving many large MP3s from GitHub Pages or
-Netlify's free bandwidth tier.
 
 ## Before going live
 
-- Replace the 8 placeholder mixes. Delete `covers/*`, `audio/*`, and the entries
-  in `mixes.json`.
+- Delete the 8 placeholder mixes from `/admin`. You can also delete the `covers/` and
+  `audio/` placeholder files from the repo.
 - Edit the `site` block, the `<title>` and `description` in `index.html`, and add
   a favicon.
 - The typeface is Inter (free, from Google Fonts). To use another font, change

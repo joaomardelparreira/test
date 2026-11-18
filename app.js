@@ -309,8 +309,13 @@
   });
 
   // ---------- boot ----------
-  fetch("mixes.json", { cache: "no-cache" })
-    .then((r) => r.json())
+  // Live list from the API (Cloudflare Pages), falling back to the static file.
+  const getJson = (u) => fetch(u, { cache: "no-cache" }).then((r) => {
+    if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) throw new Error(r.status);
+    return r.json();
+  });
+  getJson("/api/mixes")
+    .catch(() => getJson("mixes.json"))
     .then((data) => {
       site = data.site || {};
       mixes = (data.mixes || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));

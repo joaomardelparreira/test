@@ -3,6 +3,8 @@
 name = "mixes"
 main = "src/worker.js"
 compatibility_date = "2025-01-01"
+# Keep variables added in the dashboard when deploying from git.
+keep_vars = true
 
 # The static site (HTML, CSS, JS, placeholder covers/audio).
 [assets]

@@ -1,0 +1,93 @@
+{
+  "site": {
+    "title": "Your Mixes",
+    "tagline": "YOUR NAME is music for working.",
+    "byline": "Your Studio",
+    "bylineUrl": "https://example.com/",
+    "since": 2024,
+    "prefix": "MIX",
+    "audioBaseUrl": ""
+  },
+  "mixes": [
+    {
+      "id": "MIX-008",
+      "artist": "Demo Artist Eight",
+      "date": "2025-08-15",
+      "duration": "00:00:55",
+      "cover": "covers/mix-008-demo-artist-eight.webp",
+      "audio": "audio/mix-008-demo-artist-eight.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-007",
+      "artist": "Demo Artist Seven",
+      "date": "2025-07-15",
+      "duration": "00:00:50",
+      "cover": "covers/mix-007-demo-artist-seven.webp",
+      "audio": "audio/mix-007-demo-artist-seven.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-006",
+      "artist": "Demo Artist Six",
+      "date": "2025-06-15",
+      "duration": "00:00:45",
+      "cover": "covers/mix-006-demo-artist-six.webp",
+      "audio": "audio/mix-006-demo-artist-six.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-005",
+      "artist": "Demo Artist Five",
+      "date": "2025-05-15",
+      "duration": "00:00:40",
+      "cover": "covers/mix-005-demo-artist-five.webp",
+      "audio": "audio/mix-005-demo-artist-five.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-004",
+      "artist": "Demo Artist Four",
+      "date": "2025-04-15",
+      "duration": "00:00:35",
+      "cover": "covers/mix-004-demo-artist-four.webp",
+      "audio": "audio/mix-004-demo-artist-four.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-003",
+      "artist": "Demo Artist Three",
+      "date": "2025-03-15",
+      "duration": "00:00:30",
+      "cover": "covers/mix-003-demo-artist-three.webp",
+      "audio": "audio/mix-003-demo-artist-three.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-002",
+      "artist": "Demo Artist Two",
+      "date": "2025-02-15",
+      "duration": "00:00:25",
+      "cover": "covers/mix-002-demo-artist-two.webp",
+      "audio": "audio/mix-002-demo-artist-two.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    },
+    {
+      "id": "MIX-001",
+      "artist": "Demo Artist One",
+      "date": "2025-01-15",
+      "duration": "00:00:20",
+      "cover": "covers/mix-001-demo-artist-one.webp",
+      "audio": "audio/mix-001-demo-artist-one.mp3",
+      "link": "https://example.com",
+      "description": "Placeholder mix — replace me."
+    }
+  ]
+}

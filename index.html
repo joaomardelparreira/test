@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="theme-color" content="#fafafa" />
+  <title>Mixes</title>
+  <meta name="description" content="Music for working." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-info" id="header-info"></div>
+    <div class="header-buttons">
+      <button class="zoom" type="button" id="zoom-out" aria-label="show fewer columns">
+        <svg width="15" height="15" viewBox="0 0 12 12"><rect width="12" height="12" /><path d="M9 6.5H3V5.5H9V6.5Z" /></svg>
+      </button>
+      <button class="zoom" type="button" id="zoom-in" aria-label="show more columns">
+        <svg width="15" height="15" viewBox="0 0 12 12"><rect width="12" height="12" /><path d="M5.52 6.47H3V5.53H5.52V3H6.48V5.53H9V6.47H6.48V9H5.52V6.47Z" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="grid" id="grid" style="--cols:4"></main>
+  <div class="spacer"></div>
+
+  <!-- Player -->
+  <div class="progress" id="progress">
+    <div class="progress-buffer" id="progress-buffer"></div>
+    <div class="progress-fill" id="progress-fill"></div>
+    <input class="progress-slider" id="seek" type="range" min="0" max="1000" value="0" aria-label="seek" />
+  </div>
+
+  <section class="player" id="player">
+    <div class="player-bar">
+      <div class="controls">
+        <button type="button" id="prev" aria-label="previous">
+          <svg width="13" height="12" viewBox="0 0 13 12"><rect x="0" y="0" width="1.6" height="12" /><path d="M12 0V12L3 6Z" /></svg>
+        </button>
+        <button type="button" id="play" aria-label="play">
+          <svg id="icon-play" width="13" height="14" viewBox="0 0 13 14"><path d="M0 0L13 7L0 14Z" /></svg>
+          <svg id="icon-pause" width="12" height="14" viewBox="0 0 12 14" style="display:none"><rect width="4" height="14" /><rect x="8" width="4" height="14" /></svg>
+        </button>
+        <button type="button" id="next" aria-label="next">
+          <svg width="13" height="12" viewBox="0 0 13 12"><path d="M1 0V12L10 6Z" /><rect x="11.4" y="0" width="1.6" height="12" /></svg>
+        </button>
+        <p class="now-title" id="now-title"></p>
+      </div>
+      <div class="options">
+        <button type="button" id="toggle-queue" aria-label="show queue">
+          <svg class="chevron" id="chevron" width="16" height="9" viewBox="0 0 16 9" fill="none"><path d="M1 8L8 1.5L15 8" stroke="currentColor" stroke-width="1.4" /></svg>
+        </button>
+        <p class="tabular time"><span id="time-cur">0:00:00</span> of <span id="time-dur">0:00:00</span></p>
+      </div>
+    </div>
+
+    <div class="drawer">
+      <div class="queue-col">
+        <div class="queue-header"><p>Queue</p><button type="button" id="clear-queue" class="gray">Clear</button></div>
+        <ol class="queue-items" id="queue-items"></ol>
+      </div>
+      <div class="cover-col"><img id="drawer-cover" alt="" /></div>
+    </div>
+  </section>
+
+  <audio id="audio" preload="none"></audio>
+  <script src="app.js"></script>
+</body>
+</html>
